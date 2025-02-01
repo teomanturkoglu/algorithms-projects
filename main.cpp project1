@@ -1,0 +1,60 @@
+#include "../include/tweet.h"
+#include <vector>
+#include <iostream>
+#include <chrono>
+
+using namespace std;
+
+int main() 
+{
+    cout << "Enter file name: " << endl;
+    string filename; //ex: sizes/tweets5K.csv
+    cin >> filename;
+    
+    string file_folder = "data/" + filename;
+    vector<Tweet> myTweets = readTweetsFromFile(file_folder);
+    vector<Tweet> myTweets2 = myTweets;
+    vector<Tweet> myTweets3 = myTweets;
+
+    //BUBBLE SORT
+    auto start = std::chrono::high_resolution_clock::now();
+    bubbleSort(myTweets, "retweetCount", true);
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double> elapsed = end - start;
+
+    cout << "Bubble sort time: " << elapsed.count() << endl;
+
+    //INSERTION SORT
+    start = std::chrono::high_resolution_clock::now();
+    insertionSort(myTweets2, "tweetID", true);
+    end = chrono::high_resolution_clock::now();
+    elapsed = end - start;
+
+    cout << "Insertion sort time: " << elapsed.count() << endl;
+
+    //MERGE SORT
+    start = std::chrono::high_resolution_clock::now();
+    mergeSort(myTweets3, 0, myTweets3.size()-1, "retweetCount", true);
+    end = chrono::high_resolution_clock::now();
+    elapsed = end - start;
+
+    cout << "Merge sort time: " << elapsed.count() << endl;
+    
+    //BINARY SEARCH
+    start = std::chrono::high_resolution_clock::now();
+    binarySearch(myTweets2, 1773335,"tweetID");
+    end = chrono::high_resolution_clock::now();
+    elapsed = end - start;
+
+    cout << "Binary search time: " << elapsed.count() << endl;
+
+    //COUNT ABOVE THRESHOLD
+    start = std::chrono::high_resolution_clock::now();
+    countAboveThreshold(myTweets, "favoriteCount", 250);
+    end = chrono::high_resolution_clock::now();
+    elapsed = end - start;
+
+    cout << "Count above threshold time: " << elapsed.count() << endl;
+    
+    return 0;
+}
