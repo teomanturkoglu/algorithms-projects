@@ -1,0 +1,192 @@
+#include "../include/tweet.h"
+#include <stdio.h>
+#include <iostream>
+using namespace std;
+
+void bubbleSort(std::vector<Tweet>& tweets, const std::string& sortBy, bool ascending) 
+{
+    int size = tweets.size();
+    bool condition;
+
+    for(int i=0; i<size-1; i++){
+        for(int j=0; j<size-i-1; j++){
+            
+            if(ascending){
+                if(sortBy == "tweetID"){
+                    condition = tweets[j].tweetID > tweets[j + 1].tweetID;
+                }
+                else if(sortBy == "retweetCount"){
+                    condition = tweets[j].retweetCount > tweets[j + 1].retweetCount;
+                }
+                else if(sortBy == "favoriteCount"){
+                    condition = tweets[j].favoriteCount > tweets[j + 1].favoriteCount;
+                }
+                else{
+                    cout << "Not a valid sortBy" << endl;
+                    return;
+                }
+
+            }else{
+                if(sortBy == "tweetID"){
+                    condition = tweets[j].tweetID < tweets[j + 1].tweetID;
+                }
+                else if(sortBy == "retweetCount"){
+                    condition = tweets[j].retweetCount < tweets[j + 1].retweetCount;
+                }
+                else if(sortBy == "favoriteCount"){
+                    condition = tweets[j].favoriteCount < tweets[j + 1].favoriteCount;
+                }
+                else{
+                    cout << "Not a valid sortBy" << endl;
+                    return;
+                }
+            }
+
+            if(condition){
+                swap(tweets[j], tweets[j+1]);
+            }
+        }
+    } 
+}
+
+void insertionSort(std::vector<Tweet>& tweets, const std::string& sortBy, bool ascending) 
+{
+    int size = tweets.size();
+    bool condition;
+
+    for(int i=1; i<size; i++){
+        Tweet tweet= tweets[i];
+        int j= i-1;
+
+        while(j >= 0){
+            if(ascending){
+                if(sortBy == "tweetID"){
+                    condition = tweets[j].tweetID > tweet.tweetID;
+                }
+                else if(sortBy == "retweetCount"){
+                    condition = tweets[j].retweetCount > tweet.retweetCount;
+                }
+                else if(sortBy == "favoriteCount"){
+                    condition = tweets[j].favoriteCount > tweet.favoriteCount;
+                }
+                else{
+                    cout << "Not a valid sortBy" << endl;
+                    return;
+                }
+            }
+            else{
+                if(sortBy == "tweetID"){
+                    condition = tweets[j].tweetID < tweet.tweetID;
+                }
+                else if(sortBy == "retweetCount"){
+                    condition = tweets[j].retweetCount < tweet.retweetCount;
+                }
+                else if(sortBy == "favoriteCount"){
+                    condition = tweets[j].favoriteCount < tweet.favoriteCount;
+                }
+                else{
+                    cout << "Not a valid sortBy" << endl;
+                    return;
+                }
+            }
+
+            if (condition){
+                tweets[j+1] = tweets[j]; 
+                j--;
+            }
+            else{
+                break;
+            }
+        }
+
+        tweets[j+1] = tweet;
+    }
+}
+
+void merge(std::vector<Tweet>& tweets, int left, int mid, int right, const std::string& sortBy, bool ascending) 
+{
+    int size1 = mid -left + 1;
+    int size2 = right - mid;
+
+    vector<Tweet> leftarr(size1);
+    vector<Tweet> rightarr(size2);
+
+    for(int i=0; i<size1; i++){
+        leftarr[i] = tweets[left+i];
+    }
+
+    for(int j=0; j<size2; j++){
+        rightarr[j] = tweets[mid + 1 + j];
+    }
+
+    int a=0, b=0, x=left;
+    bool condition;
+
+    while(a<size1 && b<size2){
+        if(ascending){
+            if(sortBy == "tweetID"){
+                    condition = leftarr[a].tweetID <= rightarr[b].tweetID;
+            }
+            else if(sortBy == "retweetCount"){
+                condition = leftarr[a].retweetCount <= rightarr[b].retweetCount;
+            }
+           else if(sortBy == "favoriteCount"){
+                condition = leftarr[a].favoriteCount <= rightarr[b].favoriteCount;
+            }
+            else{
+                cout << "Not a valid sortBy" << endl;
+                return;
+            }
+        }
+        else{
+            if(sortBy == "tweetID"){
+                condition = leftarr[a].tweetID >= rightarr[b].tweetID;
+            }
+            else if(sortBy == "retweetCount"){
+                condition = leftarr[a].retweetCount >= rightarr[b].retweetCount;
+            }
+            else if(sortBy == "favoriteCount"){
+                condition = leftarr[a].favoriteCount >= rightarr[b].favoriteCount;
+            }
+            else{
+                cout << "Not a valid sortBy" << endl;
+                return;
+            }
+        }
+
+        if(condition){
+            tweets[x] = leftarr[a];
+            a++;
+        }
+        else{
+            tweets[x] = rightarr[b];
+            b++;
+        }
+
+        x++;
+    }
+
+    while(a<size1){
+        tweets[x] = leftarr[a];
+        a++;
+        x++;
+    }
+
+    while(b<size2){
+        tweets[x] = rightarr[b];
+        b++;
+        x++;
+    }
+}
+
+void mergeSort(std::vector<Tweet>& tweets, int left, int right, const std::string& sortBy, bool ascending) 
+{
+    if (left < right) {
+        int mid = left + (right - left) / 2;
+
+        mergeSort(tweets, left, mid, sortBy, ascending);
+        mergeSort(tweets, mid+1, right, sortBy, ascending);
+
+        merge(tweets, left, mid, right, sortBy, ascending);
+    }
+}
