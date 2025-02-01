@@ -1,0 +1,180 @@
+#include "methods.h"
+#include <iostream>
+#include <chrono>
+
+using namespace std;
+
+int main() 
+{
+  //SCENARIO
+  cout << "RUNNING SCENARIO" << endl;
+  //scenario for large dataset
+  cout << "Large dataset:" << endl;
+  std::vector<Item> l_items = readItemsFromFile("data/items_l.csv");
+
+  auto start = chrono::high_resolution_clock::now();
+  std::vector<Item> l_sorted = countingSort(l_items, "age", true);
+  auto end = chrono::high_resolution_clock::now();
+  chrono::duration<double> elapsed = end - start;
+  cout << "Counting sort time: " << elapsed.count() << endl;
+  
+  writeItemsToFile("data/items_l_sorted.csv", l_sorted);
+  
+  start = chrono::high_resolution_clock::now();
+  calculateRarityScores(l_sorted, 50);
+  end = chrono::high_resolution_clock::now();
+  elapsed = end - start;
+  cout << "Calculate rarity scores time: " << elapsed.count() << endl;
+
+  writeItemsToFile("data/items_l_rarity.csv", l_sorted);
+
+  start = chrono::high_resolution_clock::now();
+  l_sorted = heapSortByRarity(l_sorted, true);
+  end = chrono::high_resolution_clock::now();
+  elapsed = end - start;
+  cout << "Heap sort time: " << elapsed.count() << endl;
+  
+  writeItemsToFile("data/items_l_rarity_sorted.csv", l_sorted);
+
+
+  //scenario for medium dataset
+  cout << endl << "Medium dataset:" << endl;
+  std::vector<Item> m_items = readItemsFromFile("data/items_m.csv");
+
+  start = chrono::high_resolution_clock::now();
+  std::vector<Item> m_sorted = countingSort(m_items, "age", true);
+  end = chrono::high_resolution_clock::now();
+  elapsed = end - start;
+  cout << "Counting sort time: " << elapsed.count() << endl;
+
+  writeItemsToFile("data/items_m_sorted.csv", m_sorted);
+
+  start = chrono::high_resolution_clock::now();
+  calculateRarityScores(m_sorted, 50);
+  end = chrono::high_resolution_clock::now();
+  elapsed = end - start;
+  cout << "Calculate rarity scores time: " << elapsed.count() << endl;
+
+  writeItemsToFile("data/items_m_rarity.csv", m_sorted);
+
+  start = chrono::high_resolution_clock::now();
+  m_sorted = heapSortByRarity(m_sorted, true);
+  end = chrono::high_resolution_clock::now();
+  elapsed = end - start;
+  cout << "Heap sort time: " << elapsed.count() << endl;
+  
+  writeItemsToFile("data/items_m_rarity_sorted.csv", m_sorted);
+
+
+//scenario for small dataset
+  cout << endl << "Small dataset:" << endl;
+  std::vector<Item> s_items = readItemsFromFile("data/items_s.csv");
+
+  start = chrono::high_resolution_clock::now();
+  std::vector<Item> s_sorted = countingSort(s_items, "age", true);
+  end = chrono::high_resolution_clock::now();
+  elapsed = end - start;
+  cout << "Counting sort time: " << elapsed.count() << endl;
+
+  writeItemsToFile("data/items_s_sorted.csv", s_sorted);
+
+  start = chrono::high_resolution_clock::now();
+  calculateRarityScores(s_sorted, 50);
+  end = chrono::high_resolution_clock::now();
+  elapsed = end - start;
+  cout << "Calculate rarity scores time: " << elapsed.count() << endl;
+
+  writeItemsToFile("data/items_s_rarity.csv", s_sorted);
+
+  start = chrono::high_resolution_clock::now();
+  s_sorted = heapSortByRarity(s_sorted, true);
+  end = chrono::high_resolution_clock::now();
+  elapsed = end - start;
+  cout << "Heap sort time: " << elapsed.count() << endl;
+  
+  writeItemsToFile("data/items_s_rarity_sorted.csv", s_sorted);
+
+  //SORTING VALIDATION
+  cout << endl << "SORTING VALIDATION" << endl;
+
+  vector<Item> items = readItemsFromFile("data/items_s.csv");
+  vector<Item> original_items = items;
+  calculateRarityScores(original_items, 50);
+
+  //counting sort
+  vector<Item> counting_sorted = countingSort(items, "age", true);
+  
+  bool is_valid = true;
+
+  for (size_t i = 1; i < counting_sorted.size(); i++) {
+    if (counting_sorted[i - 1].rarityScore > counting_sorted[i].rarityScore) {
+      is_valid = false;
+      break;
+    }
+  }
+  cout << "Validation of Counting Sort: " << (is_valid ? "PASSED" : "FAILED") << endl;
+
+  //heap sort
+  vector<Item> heap_sorted = heapSortByRarity(original_items, false);
+  
+  is_valid = true;
+  for (size_t i = 1; i < heap_sorted.size(); i++) {
+    if (heap_sorted[i - 1].rarityScore > heap_sorted[i].rarityScore) {
+      is_valid = false;
+      break;
+    }
+  }
+  cout << "Validation of Heap Sort: " << (is_valid ? "PASSED" : "FAILED") << endl;
+
+
+  //BENCHHMARKING
+  cout << endl << "BENCHMARKING" << endl;
+  vector<Item> items1 = readItemsFromFile("data/items_s.csv");
+  vector<Item> items2 = readItemsFromFile("data/items_s.csv");
+
+  calculateRarityScores(items1, 50);
+  calculateRarityScores(items2, 50);
+
+  //counting sort
+  start = chrono::high_resolution_clock::now();
+  items1 = countingSort(items1, "age", true);
+  end = chrono::high_resolution_clock::now();
+  elapsed = end - start;
+  cout << "Counting sort time for non sorted data: " << elapsed.count() << endl;
+
+  start = chrono::high_resolution_clock::now();
+  items1 = countingSort(items1, "age", true);
+  end = chrono::high_resolution_clock::now();
+  elapsed = end - start;
+  cout << "Counting sort time for sorted data: " << elapsed.count() << endl;
+
+  items1 = countingSort(items1, "age", false);
+  start = chrono::high_resolution_clock::now();
+  items1 = countingSort(items1, "age", true);
+  end = chrono::high_resolution_clock::now();
+  elapsed = end - start;
+  cout << "Counting sort time for reverse sorted data: " << elapsed.count() << endl;
+
+
+  //heap sort
+  start = chrono::high_resolution_clock::now();
+  items2 = heapSortByRarity(items2, false);
+  end = chrono::high_resolution_clock::now();
+  elapsed = end - start;
+  cout << endl << "Heap sort time for non sorted data: " << elapsed.count() << endl;
+
+  start = chrono::high_resolution_clock::now();
+  items2 = heapSortByRarity(items2, false);
+  end = chrono::high_resolution_clock::now();
+  elapsed = end - start;
+  cout << "Heap sort time for sorted data: " << elapsed.count() << endl;
+
+  items2 = heapSortByRarity(items2, true);
+  start = chrono::high_resolution_clock::now();
+  items2 = heapSortByRarity(items2, false);
+  end = chrono::high_resolution_clock::now();
+  elapsed = end - start;
+  cout << "Heap sort time for reverse sorted data: " << elapsed.count() << endl;
+
+  return 0;
+}
