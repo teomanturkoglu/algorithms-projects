@@ -1,0 +1,101 @@
+#include "methods.h"
+#include <iostream>
+#include <vector>
+using namespace std;
+
+std::vector<Item> countingSort(std::vector<Item>& items, const std::string& attribute, bool ascending)
+{
+    int max_val = getMax(items, attribute);
+
+    vector<int> count_arr(max_val+1, 0); //count array for each age
+
+    for (const auto& item : items) { //compute the frequency of each age
+        if(attribute == "age"){
+            count_arr[item.age]++;
+
+        }else if(attribute == "type"){
+            count_arr[item.type]++;
+
+        }else if(attribute == "origin"){
+            count_arr[item.origin]++;
+
+        }else{
+            cout << "Invalid attribute" << endl;
+            return items;
+        }
+    }
+
+    for (int i=1; i <= max_val; i++) { //calculate the prefix sum
+        count_arr[i] += count_arr[i-1];
+    }
+
+    vector<Item> output_arr(items.size());
+
+    for (int i = items.size() -1; i >= 0; i--) { //place items in the output array based on count
+        if(attribute == "age"){
+            output_arr[count_arr[items[i].age] -1] = items[i];
+            count_arr[items[i].age]--;
+
+        }else if(attribute == "type"){
+            output_arr[count_arr[items[i].type] -1] = items[i];
+            count_arr[items[i].type]--;
+
+        }else if(attribute == "origin"){
+            output_arr[count_arr[items[i].origin] -1] = items[i];
+            count_arr[items[i].origin]--;
+
+        }else{
+            cout << "Invalid attribute" << endl;
+            return items;
+        }
+    }
+
+    if (!ascending) { //reverse order if descending
+        int left = 0;
+        int right = output_arr.size()-1;
+
+        while (left < right) { //swap largest with smallest until they meet in the middle
+            swap(output_arr[left], output_arr[right]);
+            left++;
+            right--;
+        }
+    }
+    return output_arr;
+}
+
+void heapify(std::vector<Item>& items, int n, int i, bool descending)
+{
+    int root = i;
+    int left = 2*i + 1;
+    int right = 2*i + 2; 
+
+    //if left child is larger than root make it new root
+    if (left < n && ((!descending && items[left].rarityScore > items[root].rarityScore) || (descending && items[left].rarityScore < items[root].rarityScore))) {
+        root = left;
+    }
+
+    //if right child is larger than root make it new root
+    if (right < n && ((!descending && items[right].rarityScore > items[root].rarityScore) || (descending && items[right].rarityScore < items[root].rarityScore))) {
+        root = right;
+    }
+
+    if (root != i) { //if root is not the largest element
+        swap(items[i], items[root]); //swap rot with largest
+        heapify(items, n, root, descending); //recursively heapify sub-tree
+    }
+}
+
+std::vector<Item> heapSortByRarity(std::vector<Item>& items, bool descending)
+{
+    int n = items.size();
+
+    for (int i = n/2 -1; i >= 0; i--) { //build heap
+        heapify(items, n, i, descending);
+    }
+
+    for (int i = n-1; i >= 0; i--) { //extract elements from heap
+        swap(items[0], items[i]); //move current root to the end
+        heapify(items, i, 0, descending); //heapify the reduced heap
+    }
+    return items;
+}
