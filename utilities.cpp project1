@@ -1,0 +1,60 @@
+#include "../include/tweet.h"
+#include <fstream>
+#include <vector>
+#include <string>
+#include <sstream>
+using namespace std;
+
+std::vector<Tweet> readTweetsFromFile(const std::string& filename) 
+{
+    vector<Tweet> tweets;
+    ifstream file(filename);
+
+    if(!file.is_open()){
+        cout << filename << " could not be opened." << endl;
+        return tweets;
+    }
+
+    string line;
+    getline(file, line);
+
+    while (getline(file, line)){
+        istringstream ss(line);
+        Tweet tweet;
+        string tweetID, retweetCount, favoriteCount;
+
+        getline(ss, tweetID, ',');
+        getline(ss, retweetCount, ',');
+        getline(ss, favoriteCount, ',');
+
+        tweet.tweetID = stoll(tweetID);
+        tweet.retweetCount = stoi(retweetCount);
+        tweet.favoriteCount = stoi(favoriteCount);
+
+        if(ss){
+            tweets.push_back(tweet);
+        }
+    }
+
+    file.close();
+    return tweets;
+}
+
+void writeTweetsToFile(const std::string& filename, const std::vector<Tweet>& tweets) 
+{
+    ofstream file(filename);
+    string line;
+
+    if(!file.is_open()){
+        cout << filename << " could not be opened." << endl;
+        return;
+    }
+
+    file << "tweetID,retweet_count,favorite_count" << endl;
+
+    for(int i=0; i<tweets.size(); i++){
+        file << tweets[i].tweetID << "," << tweets[i].retweetCount << "," << tweets[i].favoriteCount << endl;
+    }
+
+    file.close();
+}
