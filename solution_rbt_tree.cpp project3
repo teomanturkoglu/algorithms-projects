@@ -1,0 +1,668 @@
+#include <iostream> 
+#include <stdlib.h>
+#include <iomanip>
+#include <string.h>
+#include <string>
+#include <fstream>
+#include <vector>
+#include <algorithm>
+#include <stack>
+#include <iomanip>
+#include <chrono>
+#include <random>
+
+using namespace std;
+using namespace std::chrono;
+
+/////////////////// Player ///////////////////
+class publisher
+{
+public:
+	string name;
+	float na_sales;
+	float eu_sales;
+	float others_sales;
+};
+
+/////////////////// Node ///////////////////
+class Node{
+	public:
+		publisher key;
+		int color; // "Red"=1 or "Black"=0
+		Node *parent, *left, *right;
+	
+		Node(publisher);
+		~Node();
+		int get_color();
+        void set_color(int);
+};
+
+/////////////////// RB-Tree ///////////////////
+class RB_tree{
+	private:
+		Node* root;
+	public:	
+        publisher* best_seller[3];	
+		stack<string> tree_deep_stack;
+
+        Node* get_root();
+
+		Node* RB_insert(Node* root, Node* ptr);
+        void insertValue(vector<string>);
+		void RB_left_rotate(Node*);
+		void RB_right_rotate(Node*);
+		void RB_insert_fixup(Node*);
+        void preorder();
+        void find_best_seller(); 
+
+        RB_tree();
+		~RB_tree();
+};
+
+void print_best_sellers(int year, publisher* temp_publisher[3]){
+    cout.precision(5);
+    cout<< "End of the "+to_string(year)+" Year"<<endl;
+    cout<< "Best seller in North America: "+temp_publisher[0]->name+" - "<<temp_publisher[0]->na_sales<<" million"<<endl;
+    cout<< "Best seller in Europe: "+temp_publisher[1]->name+" - "<<temp_publisher[1]->eu_sales<<" million"<<endl;
+    cout<< "Best seller rest of the World: "+temp_publisher[2]->name+" - "<<temp_publisher[2]->others_sales<<" million"<<endl;
+}
+
+RB_tree generate_RBT_tree_from_csv(string file_name){
+	RB_tree temp_RBtree;
+    ifstream file(file_name);
+    string line;
+    vector<string> row;
+    int pos = 0, decade, curr_year, lineno = 3;
+
+    getline(file, line); //pass title
+    
+    getline(file, line); //doing it once more to find the first decade
+    while ((pos = line.find(',')) != string::npos){
+        row.push_back(line.substr(0, pos));
+        line.erase(0, pos + 1);
+    }
+    row.push_back(line); //to add the last element after the last comma
+    temp_RBtree.insertValue(row);
+
+    if(curr_year%10 == 0){ //if its the start of a decade
+        decade = stoi(row[2]);
+    }else{ //find the start if its in the middle
+        decade = (stoi(row[2])/10)*10+1;
+    }
+    
+    while (getline(file, line)){
+        row.clear();
+        pos = 0;
+
+        while ((pos = line.find(',')) != string::npos){
+            row.push_back(line.substr(0, pos));
+            line.erase(0, pos + 1);
+        }
+        row.push_back(line); //to add the last element after the last comma
+
+        curr_year = stoi(row[2]);
+        if(curr_year > (decade + 10)/10*10){ //if the current decade has ended, print best sellers
+            temp_RBtree.find_best_seller();
+            print_best_sellers(((decade + 10)/10*10), temp_RBtree.best_seller);
+
+            if(curr_year%10 == 0){ //if its the start of a decade
+                decade = curr_year;
+            }else{
+                decade = (curr_year/10)*10+1;
+            }
+        }
+        temp_RBtree.insertValue(row);
+    }
+    temp_RBtree.find_best_seller();
+    print_best_sellers(((decade + 10)/10*10), temp_RBtree.best_seller);
+
+    return temp_RBtree;
+}
+
+/////////////////// Name-RBT ///////////////////
+
+class Name_Node{
+    public:
+        string name;
+        int color; // "Red"=1 or "Black"=0
+        Name_Node *parent, *left, *right;
+
+        Name_Node(string name);
+        ~Name_Node();
+};
+
+Name_Node::Name_Node(string name){
+    this->name = name;
+    this->parent = NULL;
+    this->left = NULL;
+    this->right = NULL;
+    this->color = 1; // "RED";
+}
+
+Name_Node::~Name_Node(){
+}
+
+class Name_RBT{
+    private:
+        Name_Node *root;
+    public:
+        Name_Node* get_root();
+        Name_Node* insertName(string name);
+
+		void name_left_rotate(Name_Node*);
+		void name_right_rotate(Name_Node*);
+		void name_insert_fixup(Name_Node*);
+
+        Name_RBT();
+        ~Name_RBT();
+};
+
+Name_RBT::Name_RBT() {
+    this->root = NULL;
+}
+
+Name_RBT::~Name_RBT() {
+}
+
+
+Name_Node* Name_RBT::get_root(){
+    return this->root;
+}
+
+Name_Node* Name_RBT::insertName(string name){
+    Name_Node* new_node = new Name_Node(name);
+    Name_Node* temp = this->root;
+    Name_Node* parent = NULL;
+
+    while(temp != NULL){
+        parent = temp;
+
+        if(name < temp->name){
+            temp = temp->left;
+        }else{
+            temp = temp->right;
+        }
+    }
+
+    if(parent == NULL){
+        this->root = new_node;
+
+    }else if(name < parent->name){
+        parent->left = new_node;
+
+    }else{
+        parent->right = new_node;
+    }
+
+    new_node->parent = parent;
+
+    name_insert_fixup(new_node);
+    return new_node;
+}
+
+void Name_RBT::name_left_rotate(Name_Node *ptr){
+    Name_Node* right_child = ptr->right;
+    ptr->right = right_child->left;
+
+    if (right_child->left != nullptr){
+        right_child->left->parent = ptr;
+    }
+
+    right_child->parent = ptr->parent;
+
+    if (ptr->parent == nullptr){
+        this->root = right_child;
+    
+    }else if (ptr == ptr->parent->left){
+        ptr->parent->left = right_child;
+    
+    }else{
+        ptr->parent->right = right_child;
+    }
+
+    right_child->left = ptr;
+    ptr->parent = right_child;
+}
+
+void Name_RBT::name_right_rotate(Name_Node *ptr){
+    Name_Node* left_child = ptr->left;
+    ptr->left = left_child->right;
+
+    if (left_child->right != nullptr){
+        left_child->right->parent = ptr;
+    }
+
+    left_child->parent = ptr->parent;
+
+    if (ptr->parent == nullptr){
+        this->root = left_child;
+    
+    }else if (ptr == ptr->parent->right){
+        ptr->parent->right = left_child;
+        
+    }else{
+        ptr->parent->left = left_child;
+    }
+    
+    left_child->right = ptr;
+    ptr->parent = left_child;
+}
+
+void Name_RBT::name_insert_fixup(Name_Node *ptr) {
+    while (ptr != this->root && ptr->parent && ptr->parent->color == 1){
+         if (!ptr->parent->parent) {
+            break; //if there is no grandparent, exit the loop
+        }
+
+        if (ptr->parent == ptr->parent->parent->left){
+            Name_Node* u = ptr -> parent -> parent -> right; //uncle
+
+            if (u && u->color == 1){
+                ptr->parent->color = 0;
+                u->color = 0;
+                ptr->parent->parent->color = 1;
+                ptr = ptr->parent->parent;
+            
+            }else{
+                if (ptr == ptr->parent->right){
+                    ptr = ptr->parent;
+                    name_left_rotate(ptr);
+                }
+
+                ptr->parent->color = 0;
+                ptr->parent->parent->color = 1;
+                name_right_rotate(ptr->parent->parent);
+            }
+        }else{
+            Name_Node* u = ptr->parent->parent->left;
+
+            if (u && u->color == 1) {
+                ptr->parent->color = 0;
+                u->color = 0;
+                ptr->parent->parent->color = 1;
+                ptr = ptr->parent->parent;
+            
+            }else{
+                if (ptr == ptr->parent->left){
+                    ptr = ptr->parent;
+                    name_right_rotate(ptr);
+                }
+
+                ptr->parent->color = 0;
+                ptr->parent->parent->color = 1;
+                name_left_rotate(ptr->parent->parent);
+            }
+        }
+    }
+
+    if (this->root) {
+        this->root->color = 0; // Ensure the root is black
+    } 
+}
+
+Name_RBT generate_Name_tree_from_csv(string file_name){
+    Name_RBT temp_Nametree;
+    ifstream file(file_name);
+    string line, name;
+    int pos = 0, i = 1;
+
+    getline(file, line); //pass title
+
+    while (getline(file, line)){
+        pos = line.find(',');
+        name = line.substr(0, pos);
+        temp_Nametree.insertName(name);
+    }
+
+    return temp_Nametree;
+}
+
+void in_order_name_traversal(Name_Node* root, vector<string>& names) {
+    if (root == nullptr) {
+        return;
+    }
+
+    in_order_name_traversal(root->left, names);
+
+    if (find(names.begin(), names.end(), root->name) == names.end()) {
+        names.push_back(root->name);
+    }
+
+    in_order_name_traversal(root->right, names);
+}
+
+vector<string> get_unique_names(Name_RBT sortedRBT){
+    vector<string> names;
+    in_order_name_traversal(sortedRBT.get_root(), names);
+
+    return names;
+}
+
+Name_Node* search(Name_RBT sortedRBT, Name_Node* root, string name){
+    if (root == nullptr || root->name == name)
+        return root;
+
+    if (root->name < name)
+        return search(sortedRBT, root->right, name);
+
+    return search(sortedRBT, root->left, name);
+}
+
+//ADDITIONAL FUNCTIONS
+Node* search(RB_tree tree, Node* root, string name){
+    if (root == nullptr || root->key.name == name)
+        return root;
+
+    if (root->key.name < name)
+        return search(tree, root->right, name);
+
+    return search(tree, root->left, name);
+}
+
+void in_order_traversal(Node* root, vector<string>& publishers) {
+    if (root == nullptr) {
+        return;
+    }
+
+    in_order_traversal(root->left, publishers);
+
+    if (find(publishers.begin(), publishers.end(), root->key.name) == publishers.end()) {
+        publishers.push_back(root->key.name);
+    }
+
+    in_order_traversal(root->right, publishers);
+}
+
+vector<string> get_unique_publishers(RB_tree& tree) {
+    vector<string> publishers;
+    in_order_traversal(tree.get_root(), publishers);
+
+    return publishers;
+}
+
+vector<string> read_to_vector(string file_name){
+    ifstream file(file_name);
+    string line;
+    vector<string> vec;
+    getline(file, line); //pass title
+
+    while (getline(file, line)){
+        vec.push_back(line);
+    }
+
+    return vec;
+}
+
+void write_to_file(vector<string> vec, string file_name){
+    ofstream file(file_name);
+    for (int i = 0; i < vec.size(); i++){
+        file << vec[i] << endl;
+    }
+}
+
+////////////////////////////////////////////
+//----------------- MAIN -----------------//
+////////////////////////////////////////////
+int main(int argc, char* argv[]){
+
+	string fname = argv[1];	
+
+    //PART A
+    auto start = high_resolution_clock::now();
+    RB_tree RBtree = generate_RBT_tree_from_csv(fname);
+    auto end = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(end - start).count();
+    cout << "Time taken to insert all data into RBT: " << duration << " µs" << endl;
+    
+    //PART B
+    vector<string> publishers = get_unique_publishers(RBtree);
+    random_device rd;
+    mt19937 g(rd());
+    shuffle(publishers.begin(), publishers.end(), g);
+
+    auto search_start = high_resolution_clock::now();
+    for (int i = 0; i < 50; ++i) {
+        search(RBtree, RBtree.get_root(), publishers[i]);
+    }
+    auto search_end = high_resolution_clock::now();
+    auto search_duration = duration_cast<nanoseconds>(search_end - search_start).count() / 50;
+    cout << "Average time for 50 random searches: " << search_duration << " ns" << endl;
+    
+    //PART C
+    RBtree.preorder();
+    
+    //PART F
+    vector<string> data = read_to_vector(fname);
+    stable_sort(data.begin(), data.end()); //sort according to game name
+
+    string fname2 = "VideGames_sorted.csv";
+    write_to_file(data, fname2); //create a new file with sorted data
+    
+    start = high_resolution_clock::now();
+    Name_RBT sortedRBT = generate_Name_tree_from_csv(fname2);
+    end = high_resolution_clock::now();
+    duration = duration_cast<microseconds>(end - start).count();
+    cout << "Time taken to insert all data into RBT (name order): " << duration << " µs" << endl;
+
+    vector<string> names = get_unique_names(sortedRBT);
+    shuffle(names.begin(), names.end(), g);
+
+    search_start = high_resolution_clock::now();
+    for (int i = 0; i < 50; ++i) {
+        search(sortedRBT, sortedRBT.get_root(), names[i]);
+    }
+    search_end = high_resolution_clock::now();
+    search_duration = duration_cast<nanoseconds>(search_end - search_start).count() / 50;
+    cout << "Average time for 50 random searches (name order): " << search_duration << " ns" << endl;
+    
+	return EXIT_SUCCESS;
+}
+
+/////////////////// Node ///////////////////
+
+Node::Node(publisher key){
+	this->key = key;
+    this->color = 1; // "RED";
+	this->parent = NULL;
+	this->left = NULL;
+	this->right = NULL;
+}
+
+/////////////////// RB-Tree ///////////////////
+Node* RB_tree::get_root(){
+    return this->root;
+}
+
+Node* RB_tree::RB_insert(Node* root, Node* ptr){
+    if (root == nullptr){
+		root = ptr;
+        return ptr;
+    }
+
+    if (ptr->key.name < root->key.name){
+        root->left = RB_insert(root->left, ptr);
+        root->left->parent = root;
+
+    }else if (ptr->key.name > root->key.name){
+        root->right = RB_insert(root->right, ptr);
+        root->right->parent = root;
+
+    }else{
+		root->key.na_sales += ptr->key.na_sales;
+        root->key.eu_sales += ptr->key.eu_sales;
+        root->key.others_sales += ptr->key.others_sales;
+	}
+
+    return root;
+}
+
+void RB_tree::insertValue(vector<string> n) {
+    publisher pub;
+    pub.name = n[3];
+    pub.na_sales = stof(n[4]);
+    pub.eu_sales = stof(n[5]);
+    pub.others_sales = stof(n[6]);
+
+    Node* node = new Node(pub);
+    this->root = RB_insert(this->root, node);
+    RB_insert_fixup(node);
+}
+
+void RB_tree::RB_left_rotate(Node *ptr){
+    Node* right_child = ptr->right;
+    ptr->right = right_child->left;
+
+    if (right_child->left != nullptr){
+        right_child->left->parent = ptr;
+    }
+
+    right_child->parent = ptr->parent;
+
+    if (ptr->parent == nullptr){
+        this->root = right_child;
+    
+    }else if (ptr == ptr->parent->left){
+        ptr->parent->left = right_child;
+    
+    }else{
+        ptr->parent->right = right_child;
+    }
+
+    right_child->left = ptr;
+    ptr->parent = right_child;
+}
+
+void RB_tree::RB_right_rotate(Node *ptr){
+    Node* left_child = ptr->left;
+    ptr->left = left_child->right;
+
+    if (left_child->right != nullptr){
+        left_child->right->parent = ptr;
+    }
+
+    left_child->parent = ptr->parent;
+
+    if (ptr->parent == nullptr){
+        this->root = left_child;
+    
+    }else if (ptr == ptr->parent->right){
+        ptr->parent->right = left_child;
+        
+    }else{
+        ptr->parent->left = left_child;
+    }
+    
+    left_child->right = ptr;
+    ptr->parent = left_child;
+}
+
+void RB_tree::RB_insert_fixup(Node *ptr) {
+    while (ptr != this->root && ptr->parent && ptr->parent->color == 1){
+         if (!ptr->parent->parent) {
+            break; //if there is no grandparent, exit the loop
+        }
+
+        if (ptr->parent == ptr->parent->parent->left){
+            Node* u = ptr -> parent -> parent -> right; //uncle
+
+            if (u && u->color == 1){
+                ptr->parent->color = 0;
+                u->color = 0;
+                ptr->parent->parent->color = 1;
+                ptr = ptr->parent->parent;
+            
+            }else{
+                if (ptr == ptr->parent->right){
+                    ptr = ptr->parent;
+                    RB_left_rotate(ptr);
+                }
+
+                ptr->parent->color = 0;
+                ptr->parent->parent->color = 1;
+                RB_right_rotate(ptr->parent->parent);
+            }
+        }else{
+            Node* u = ptr->parent->parent->left;
+
+            if (u && u->color == 1) {
+                ptr->parent->color = 0;
+                u->color = 0;
+                ptr->parent->parent->color = 1;
+                ptr = ptr->parent->parent;
+            
+            }else{
+                if (ptr == ptr->parent->left){
+                    ptr = ptr->parent;
+                    RB_right_rotate(ptr);
+                }
+
+                ptr->parent->color = 0;
+                ptr->parent->parent->color = 1;
+                RB_left_rotate(ptr->parent->parent);
+            }
+        }
+    }
+
+    if (this->root) {
+        this->root->color = 0; // Ensure the root is black
+    } 
+}
+
+void RB_tree::preorder(){
+    stack<pair<Node*, int> > s;
+    s.push(make_pair(this->root, 0));
+
+    while (!s.empty()){
+        Node* node = s.top().first;
+        int depth = s.top().second;
+        s.pop();
+
+        if (node){
+            cout << string(depth, '-') << (node->color == 1 ? "(RED) " : "(BLACK) ") << node->key.name << endl;
+
+            s.push(make_pair(node->right, depth + 1));
+            s.push(make_pair(node->left, depth + 1));
+        }
+    }  
+}
+
+void RB_tree::find_best_seller(){
+    publisher* temp_publisher[3] = {NULL, NULL, NULL};
+    stack<Node*> s;
+    Node* curr = this->root;
+
+    while (curr != NULL || s.empty() == false){
+        while (curr !=  NULL){
+            s.push(curr);
+            curr = curr->left;
+        }
+        curr = s.top();
+        s.pop();
+
+        if(temp_publisher[0] == NULL || curr->key.na_sales > temp_publisher[0]->na_sales){
+            temp_publisher[0] = &curr->key;
+        }
+        if(temp_publisher[1] == NULL || curr->key.eu_sales > temp_publisher[1]->eu_sales){
+            temp_publisher[1] = &curr->key;
+        }
+        if(temp_publisher[2] == NULL || curr->key.others_sales > temp_publisher[2]->others_sales){
+            temp_publisher[2] = &curr->key;
+        }
+
+        curr = curr->right;
+    }
+
+    this->best_seller[0] = temp_publisher[0];
+    this->best_seller[1] = temp_publisher[1];
+    this->best_seller[2] = temp_publisher[2];    
+}
+
+RB_tree::RB_tree(){
+	this->root = NULL;
+    this->best_seller[0] = NULL;
+    this->best_seller[1] = NULL;
+    this->best_seller[2] = NULL;
+}
+
+RB_tree::~RB_tree(){
+}
